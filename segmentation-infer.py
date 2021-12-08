@@ -6,6 +6,7 @@ import albumentations as A
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data import DataLoader
 import segmentation_models_pytorch as smp
+from crop import crop
 
 
 class CFG:
@@ -37,14 +38,16 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         img_path = self.img_paths[index]
+        fname = img_path.split('/')[-1]
         img = cv2.imread(img_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        size = img.shape[:2]
 
         if self.transforms:
             data = self.transforms(image=img)
             img = data['image']
 
-        return img
+        return img, fname, str(size)
 
     def __len__(self):
         return len(self.img_paths)
@@ -74,19 +77,25 @@ model = smp.Unet(
 )
 
 def write_masks():
-    cntr = 0
     if not os.path.exists(cfg.out_path):
         os.mkdir(cfg.out_path)
     model = torch.load('./best_model.pth', cfg.device)
     for test_batch in iter(test_loader):
-        test_batch = test_batch.float().to(cfg.device)
+        fnames = test_batch[1]; sizes = test_batch[2]
+        test_batch = test_batch[0].float().to(cfg.device)
         with torch.no_grad():
             predicted_masks = model(test_batch).detach().cpu().numpy().transpose(0, 2, 3, 1)
         for x in range(predicted_masks.shape[0]):
             mask = predicted_masks[x][:, :, 1]
+            fname = fnames[x]
+            h, w = [int(a) for a in sizes[x].replace(' ', '').lstrip('(').rstrip(')').split(',')]
             mask = np.round(mask, 0) * 255
-            out_fname = os.path.join(cfg.out_path, f'{cntr}.jpg')
+            mask = cv2.resize(mask, (w, h))
+            out_fname = os.path.join(cfg.out_path, fname)
             cv2.imwrite(out_fname, mask)
-            cntr += 1
 
 write_masks()
+
+for img_fname in test_dataset.img_paths:
+    msk_fname = os.path.join('./out', img_fname.split('/')[-1])
+    crop(img_fname, msk_fname)
