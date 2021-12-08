@@ -3,7 +3,7 @@ import torch
 import cv2
 import numpy as np
 import albumentations as A
-from albumentations.pytorch import ToTensorV2
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.data import DataLoader
 import segmentation_models_pytorch as smp
 
@@ -49,45 +49,45 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.img_paths)
 
-    preprocessing_fn = smp.encoders.get_preprocessing_fn(cfg.encoder, cfg.encoder_weights)
+preprocessing_fn = smp.encoders.get_preprocessing_fn(cfg.encoder, cfg.encoder_weights)
 
-    def to_tensor(x, **kwargs):
-        return x.astype('float32').transpose(2, 0, 1)
+def to_tensor(x, **kwargs):
+    return x.astype('float32').transpose(2, 0, 1)
 
-    data_transforms = {
-        "test": A.Compose([
-            A.Resize(*cfg.img_size),
-            A.Lambda(image=preprocessing_fn),
-            A.Lambda(image=to_tensor),
-        ], p=1.0)
-    }
+data_transforms = {
+    "test": A.Compose([
+        A.Resize(*cfg.img_size),
+        A.Lambda(image=preprocessing_fn),
+        A.Lambda(image=to_tensor),
+    ], p=1.0)
+}
 
-    test_dataset = Dataset(cfg, transforms=data_transforms['test'])
-    test_loader = DataLoader(test_dataset, batch_size=cfg.batch_size,
-                             num_workers=2, shuffle=True, pin_memory=True, drop_last=False)
+test_dataset = Dataset(cfg, transforms=data_transforms['test'])
+test_loader = DataLoader(test_dataset, batch_size=cfg.batch_size,
+                         num_workers=2, shuffle=True, pin_memory=True, drop_last=False)
 
-    model = smp.Unet(
-        encoder_name=cfg.encoder,
-        encoder_weights=cfg.encoder_weights,
-        classes=len(cfg.classes),
-        activation=cfg.activation,
-    )
+model = smp.Unet(
+    encoder_name=cfg.encoder,
+    encoder_weights=cfg.encoder_weights,
+    classes=len(cfg.classes),
+    activation=cfg.activation,
+)
 
-    def write_masks():
-        cntr = 0
-        if not os.path.exists(cfg.tst_path):
-            os.mkdir(cfg.tst_path)
-        model = torch.load('./best_model.pth', cfg.device)
-        for test_batch in iter(test_loader):
-            test_batch = test_batch.float().to(cfg.device)
-            with torch.no_grad():
-                predicted_masks = model(test_batch).detach().cpu().numpy()
-            test_batch = test_batch.to('cpu').numpy().transpose(0, 2, 3, 1)
-            for x in range(cfg.batch_size):
-                mask = predicted_masks[x][1]
-                mask = np.round(mask, 0) * 255
-                out_fname = os.path.join(cfg.out_path, f'{cntr}.jpg')
-                cv2.imwrite(out_fname, mask)
-                cntr += 1
+def write_masks():
+    cntr = 0
+    if not os.path.exists(cfg.out_path):
+        os.mkdir(cfg.out_path)
+    model = torch.load('./best_model.pth', cfg.device)
+    for test_batch in iter(test_loader):
+        test_batch = test_batch.float().to(cfg.device)
+        with torch.no_grad():
+            predicted_masks = model(test_batch).detach().cpu().numpy().transpose(0, 2, 3, 1)
+        test_batch = test_batch.to('cpu').numpy().transpose(0, 2, 3, 1)
+        for x in range(cfg.batch_size):
+            mask = predicted_masks[x][:, :, 1]
+            mask = np.round(mask, 0) * 255
+            out_fname = os.path.join(cfg.out_path, f'{cntr}.jpg')
+            cv2.imwrite(out_fname, mask)
+            cntr += 1
 
-    write_masks()
+write_masks()
