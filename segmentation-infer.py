@@ -82,8 +82,7 @@ def write_masks():
         test_batch = test_batch.float().to(cfg.device)
         with torch.no_grad():
             predicted_masks = model(test_batch).detach().cpu().numpy().transpose(0, 2, 3, 1)
-        test_batch = test_batch.to('cpu').numpy().transpose(0, 2, 3, 1)
-        for x in range(cfg.batch_size):
+        for x in range(predicted_masks.shape[0]):
             mask = predicted_masks[x][:, :, 1]
             mask = np.round(mask, 0) * 255
             out_fname = os.path.join(cfg.out_path, f'{cntr}.jpg')
