@@ -71,7 +71,7 @@ test_loader = DataLoader(test_dataset, batch_size=cfg.batch_size,
 
 model = smp.Unet(
     encoder_name=cfg.encoder,
-    encoder_weights=cfg.encoder_weights,
+    encoder_weights=None,
     classes=len(cfg.classes),
     activation=cfg.activation,
 )
