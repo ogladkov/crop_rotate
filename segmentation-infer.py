@@ -19,7 +19,7 @@ class CFG:
     img_width = 512
     img_size = (img_height, img_width)
     batch_size = 4
-    device = 'cpu'
+    device = 'cuda'
     epochs = 40
     classes = ['photos', 'bg']
     encoder = 'se_resnext50_32x4d'
