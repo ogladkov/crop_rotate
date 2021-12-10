@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader, Dataset
 from torch.utils.data import DataLoader
 import segmentation_models_pytorch as smp
 from crop import crop
+from rotate import Rotator
 
 
 class CFG:
@@ -19,9 +20,9 @@ class CFG:
     img_width = 512
     img_size = (img_height, img_width)
     batch_size = 4
-    device = 'cpu'
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     epochs = 40
-    classes = ['photos', 'bg']
+    classes = ['bg', 'photos']
     encoder = 'se_resnext50_32x4d'
     encoder_weights = 'imagenet'
     activation = 'sigmoid'
@@ -75,6 +76,7 @@ model = smp.Unet(
     classes=len(cfg.classes),
     activation=cfg.activation,
 )
+model.eval()
 
 def write_masks():
     if not os.path.exists(cfg.out_path):
@@ -99,3 +101,8 @@ write_masks()
 for img_fname in test_dataset.img_paths:
     msk_fname = os.path.join('./out', img_fname.split('/')[-1])
     crop(img_fname, msk_fname)
+
+# rotator = Rotator(cfg.device)
+# for fname in os.listdir('./cropped'):
+#     fpath = os.path.join('./cropped', fname)
+#     rotator.rotate(fpath)
