@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, Dataset
 from torch.utils.data import DataLoader
 import segmentation_models_pytorch as smp
 from crop import crop
-from rotate import Rotator
+# from rotate import Rotator
 
 
 class CFG:
