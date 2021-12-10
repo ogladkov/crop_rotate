@@ -1,5 +1,6 @@
 ### Installation 
-1. Het requirements: 'pip install -r requirements.txt'
-2. Put images to './test/' folder
-3. Run 'segmentation-infer.py'
-4. Get masks in './out' folder
+1. Install PyTorch 
+2. Install requirements: 'pip install -r requirements.txt'
+3. Put images to './test/' folder
+4. Run 'segmentation-infer.py'
+5. Get masks in './out' folder
