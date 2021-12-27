@@ -2,7 +2,7 @@ from flask import Flask
 from flask import request, Response, render_template, send_file
 import numpy as np
 import os
-from inference import CFG, infer, process_input, write_result
+from segmentation_infer import CFG
 
 app = Flask(__name__)
 cfg = CFG()
