@@ -62,6 +62,5 @@ def infer(cfg, img_path):
     return img, msk
 
 
-cfg = CFG()
-img, msk = infer(cfg, '/home/sm00th/Projects/upwork/melvin_k/rotate_crop/data/images/IMG_6164r.jpg')
+# cfg = CFG()
 
