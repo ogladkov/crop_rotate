@@ -46,4 +46,4 @@ def crop(img_fname, msk_fname):
     warped = cv2.warpPerspective(img, M, (maxWidth, maxHeight))
 
     fout = f'./cropped/{img_fname.split("/")[-1]}'
-    cv2.imwrite(fout, warped)
+    return warped
